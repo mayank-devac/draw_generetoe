@@ -1,0 +1,52 @@
+{
+	"name": "agent",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "npm run typecheck && vite build",
+		"dev": "concurrently --kill-others-on-fail --names app,mcp --prefix-colors cyan,magenta \"npm:dev:app\" \"npm:dev:mcp\"",
+		"dev:app": "vite --host 127.0.0.1 --port 5173 --strictPort",
+		"dev:mcp": "tsx watch server/index.ts",
+		"start:mcp": "tsx server/index.ts",
+		"typecheck": "tsc --noEmit",
+		"preview": "vite preview"
+	},
+	"dependencies": {
+		"@ai-sdk/anthropic": "^2.0.95",
+		"@ai-sdk/google": "^2.0.87",
+		"@ai-sdk/openai": "^2.0.118",
+		"@ai-sdk/openai-compatible": "^1.0.48",
+		"@cloudflare/vite-plugin": "^1.51.3",
+		"@google/generative-ai": "^0.24.1",
+		"@modelcontextprotocol/express": "^2.0.0",
+		"@modelcontextprotocol/node": "^2.0.0",
+		"@modelcontextprotocol/server": "^2.0.0",
+		"@tldraw/tlschema": "^4.0.3",
+		"@worker-tools/json-stream": "^0.1.0-pre.12",
+		"ai": "^5.0.233",
+		"best-effort-json-parser": "^1.5.1",
+		"express": "^5.1.0",
+		"itty-router": "^5.0.24",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"react-markdown": "^10.1.0",
+		"tldraw": "^4.0.3",
+		"wrangler": "^4.121.0",
+		"ws": "^8.21.3",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^5.20260812.1",
+		"@types/express": "^5.0.3",
+		"@types/node": "^24.13.3",
+		"@types/react": "^18.3.31",
+		"@types/react-dom": "^18.3.5",
+		"@types/ws": "^8.18.1",
+		"@vitejs/plugin-react-swc": "^3.10.2",
+		"concurrently": "^10.0.4",
+		"tsx": "^4.23.12",
+		"typescript": "^5.8.3",
+		"vite": "^7.3.6"
+	}
+}
