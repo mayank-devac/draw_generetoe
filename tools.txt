@@ -172,18 +172,28 @@ params:
 - maxWidth (number, optional): Maximum displayed image width from 64 to 1600; default 640.
 - maxHeight (number, optional): Maximum displayed image height from 64 to 1200; default 480.
 
+name: create\_mermaid\_diagram
+purpose: Render Mermaid source in the top preview panel so the user can inspect or edit it and choose whether to add it to the canvas. Follow the new-drawing page workflow first.
+params:
+
+- shapeId (string, required): Requested simple shape ID for the new Mermaid frame.
+- source (string, required): Complete Mermaid diagram source, including its diagram declaration.
+- title (string, optional): Optional short frame title. Default Mermaid diagram.
+- w (number, optional): Optional requested frame width from 320 to 1600, constrained to the current viewport.
+- h (number, optional): Optional requested frame height from 240 to 1200, constrained to the current viewport.
+
 name: create\_page
-purpose: Create and switch to a new automatically named canvas page; call inspect_pages next to verify it.
+purpose: Create and switch to a new automatically named canvas page. Before starting a new drawing, call inspect_pages. If the current page contains objects, call create_page and draw on the new page. If it is empty, reuse the current page.
 params: none
 
 name: inspect\_pages
-purpose: List current and all canvas pages with object counts, or inspect object IDs and types for one 1-based page number.
+purpose: List current and all canvas pages with object counts, or inspect object IDs and types for one 1-based page number. Before starting a new drawing, call inspect_pages. If the current page contains objects, call create_page and draw on the new page. If it is empty, reuse the current page.
 params:
 
 - pageNumber (integer, optional): Optional 1-based page number whose object IDs and types should be returned.
 
 name: list\_tools
-purpose: List every registered draw-app tool with a one-line summary; call this first to choose tools.
+purpose: List every registered draw-app tool with a one-line summary and the required new-drawing page workflow; call this first to choose tools.
 params: none
 
 name: describe\_tools

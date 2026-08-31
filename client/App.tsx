@@ -17,6 +17,8 @@ import { CustomHelperButtons } from './components/CustomHelperButtons'
 import { AgentViewportBoundsHighlight } from './components/highlights/AgentViewportBoundsHighlights'
 import { ContextHighlights } from './components/highlights/ContextHighlights'
 import { enableLinedFillStyle } from './enableLinedFillStyle'
+import { MermaidEditorOverlay, MermaidPanelToggle } from './mermaid/MermaidEditor'
+import './mermaid/mermaid.css'
 import { customShapeUtils } from './shapes/customShapeUtils'
 import { TargetAreaTool } from './tools/TargetAreaTool'
 import { TargetShapeTool } from './tools/TargetShapeTool'
@@ -67,7 +69,9 @@ function App() {
 	const components: TLComponents = useMemo(() => {
 		return {
 			HelperButtons: () => agent && <CustomHelperButtons agent={agent} />,
+			SharePanel: MermaidPanelToggle,
 			StylePanel: CollapsibleStylePanel,
+			TopPanel: MermaidEditorOverlay,
 			InFrontOfTheCanvas: () => (
 				<>
 					{agent && <AgentViewportBoundsHighlight agent={agent} />}

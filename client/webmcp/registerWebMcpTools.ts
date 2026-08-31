@@ -7,6 +7,7 @@ import { Streaming } from '../../shared/types/Streaming'
 import { TldrawAgent } from '../agent/TldrawAgent'
 import { searchCommonsImages } from '../commons/commonsImages'
 import { insertCommonsImage } from '../commons/insertCommonsImage'
+import { previewMermaidDiagram } from '../mermaid/mermaidDiagram'
 import { createCanvasPage, inspectCanvasPages } from './pageTools'
 
 type JsonSchema = {
@@ -58,17 +59,20 @@ const ACTION_TOOL_NAMES = [
 ] as const satisfies readonly AgentAction['_type'][]
 
 const COMMONS_TOOL_NAMES = ['search_commons_images', 'add_commons_image'] as const
+const MERMAID_TOOL_NAMES = ['create_mermaid_diagram'] as const
 const PAGE_TOOL_NAMES = ['create_page', 'inspect_pages'] as const
 const DISCOVERY_TOOL_NAMES = ['list_tools', 'describe_tools'] as const
 const ALL_TOOL_NAMES = [
 	...ACTION_TOOL_NAMES,
 	...COMMONS_TOOL_NAMES,
+	...MERMAID_TOOL_NAMES,
 	...PAGE_TOOL_NAMES,
 	...DISCOVERY_TOOL_NAMES,
 ] as const
 
 type ActionToolName = (typeof ACTION_TOOL_NAMES)[number]
 type CommonsToolName = (typeof COMMONS_TOOL_NAMES)[number]
+type MermaidToolName = (typeof MERMAID_TOOL_NAMES)[number]
 type PageToolName = (typeof PAGE_TOOL_NAMES)[number]
 type ToolName = (typeof ALL_TOOL_NAMES)[number]
 
@@ -101,11 +105,17 @@ const COMMONS_PURPOSES: Record<CommonsToolName, string> = {
 		'Re-verify and add one Commons image at exact canvas coordinates with a grouped visible credit.',
 }
 
+const MERMAID_PURPOSES: Record<MermaidToolName, string> = {
+	create_mermaid_diagram:
+		'Render Mermaid source in the top preview panel so the user can inspect or edit it and choose whether to add it to the canvas. Follow the new-drawing page workflow first.',
+}
+
+const NEW_DRAW_PAGE_WORKFLOW =
+	'Before starting a new drawing, call inspect_pages. If the current page contains objects, call create_page and draw on the new page. If it is empty, reuse the current page.'
+
 const PAGE_PURPOSES: Record<PageToolName, string> = {
-	create_page:
-		'Create and switch to a new automatically named canvas page; call inspect_pages next to verify it.',
-	inspect_pages:
-		'List current and all canvas pages with object counts, or inspect object IDs and types for one 1-based page number.',
+	create_page: `Create and switch to a new automatically named canvas page. ${NEW_DRAW_PAGE_WORKFLOW}`,
+	inspect_pages: `List current and all canvas pages with object counts, or inspect object IDs and types for one 1-based page number. ${NEW_DRAW_PAGE_WORKFLOW}`,
 }
 
 const PARAMETER_DESCRIPTIONS: Record<ActionToolName, Record<string, string>> = {
@@ -266,6 +276,44 @@ const ADD_COMMONS_IMAGE_INPUT_SCHEMA: JsonSchema = Object.freeze({
 	}),
 }) as JsonSchema
 
+const CREATE_MERMAID_DIAGRAM_INPUT_SCHEMA: JsonSchema = Object.freeze({
+	type: 'object',
+	additionalProperties: false,
+	required: Object.freeze(['shapeId', 'source']),
+	properties: Object.freeze({
+		shapeId: Object.freeze({
+			type: 'string',
+			minLength: 1,
+			maxLength: 100,
+			description: 'Requested simple shape ID for the new Mermaid frame.',
+		}),
+		source: Object.freeze({
+			type: 'string',
+			minLength: 1,
+			maxLength: 50000,
+			description: 'Complete Mermaid diagram source, including its diagram declaration.',
+		}),
+		title: Object.freeze({
+			type: 'string',
+			minLength: 1,
+			maxLength: 120,
+			description: 'Optional short frame title. Default Mermaid diagram.',
+		}),
+		w: Object.freeze({
+			type: 'number',
+			minimum: 320,
+			maximum: 1600,
+			description: 'Optional requested frame width, constrained to the current viewport.',
+		}),
+		h: Object.freeze({
+			type: 'number',
+			minimum: 240,
+			maximum: 1200,
+			description: 'Optional requested frame height, constrained to the current viewport.',
+		}),
+	}),
+}) as JsonSchema
+
 const CREATE_PAGE_INPUT_SCHEMA: JsonSchema = Object.freeze({
 	type: 'object',
 	additionalProperties: false,
@@ -327,6 +375,16 @@ const AddCommonsImageInput = z
 		y: z.number().finite(),
 		maxWidth: z.number().finite().min(64).max(1600).optional(),
 		maxHeight: z.number().finite().min(64).max(1200).optional(),
+	})
+	.strict()
+
+const CreateMermaidDiagramInput = z
+	.object({
+		shapeId: z.string().trim().min(1).max(100),
+		source: z.string().trim().min(1).max(50000),
+		title: z.string().trim().min(1).max(120).optional(),
+		w: z.number().finite().min(320).max(1600).optional(),
+		h: z.number().finite().min(240).max(1200).optional(),
 	})
 	.strict()
 
@@ -455,6 +513,36 @@ function createCatalog(agent: TldrawAgent) {
 		untrustedContent: true,
 	})
 
+	catalog.set('create_mermaid_diagram', {
+		name: 'create_mermaid_diagram',
+		purpose: MERMAID_PURPOSES.create_mermaid_diagram,
+		inputSchema: CREATE_MERMAID_DIAGRAM_INPUT_SCHEMA,
+		execute: async (input, context) => {
+			if (context?.signal?.aborted) {
+				return { ok: false, tool: 'create_mermaid_diagram', error: 'Tool call was aborted.' }
+			}
+
+			const parsed = CreateMermaidDiagramInput.safeParse(input)
+			if (!parsed.success) return invalidArgumentsResult('create_mermaid_diagram', parsed.error)
+
+			try {
+				const result = await previewMermaidDiagram(
+					agent.editor,
+					parsed.data,
+					context?.signal
+				)
+				return { ok: true, tool: 'create_mermaid_diagram', ...result }
+			} catch (error) {
+				if (isAbortError(error)) {
+					return { ok: false, tool: 'create_mermaid_diagram', error: 'Tool call was aborted.' }
+				}
+				return toolErrorResult('create_mermaid_diagram', error)
+			}
+		},
+		readOnly: false,
+		untrustedContent: false,
+	})
+
 	catalog.set('create_page', {
 		name: 'create_page',
 		purpose: PAGE_PURPOSES.create_page,
@@ -511,9 +599,11 @@ function createCatalog(agent: TldrawAgent) {
 
 	catalog.set('list_tools', {
 		name: 'list_tools',
-		purpose: 'List every registered draw-app tool with a one-line summary; call this first to choose tools.',
+		purpose:
+			'List every registered draw-app tool with a one-line summary and the required new-drawing page workflow; call this first to choose tools.',
 		inputSchema: LIST_TOOLS_INPUT_SCHEMA,
 		execute: () => ({
+			workflow: NEW_DRAW_PAGE_WORKFLOW,
 			tools: [...catalog.values()].map(({ name, purpose }) => ({ name, purpose })),
 		}),
 		readOnly: true,
