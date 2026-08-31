@@ -156,6 +156,32 @@ params:
 
 - expression (string, required): Natural-language description of what should be counted.
 
+name: search\_commons\_images
+purpose: Search Wikimedia Commons for up to six verified CC0 or public-domain images before choosing one to add.
+params:
+
+- query (string, required): Short descriptive Commons file search query.
+
+name: add\_commons\_image
+purpose: Re-verify and add one Commons image at exact canvas coordinates with a grouped visible credit.
+params:
+
+- pageId (integer, required): Verified Commons pageId returned by search_commons_images.
+- x (number, required): Exact canvas X coordinate for the image top-left.
+- y (number, required): Exact canvas Y coordinate for the image top-left.
+- maxWidth (number, optional): Maximum displayed image width from 64 to 1600; default 640.
+- maxHeight (number, optional): Maximum displayed image height from 64 to 1200; default 480.
+
+name: create\_page
+purpose: Create and switch to a new automatically named canvas page; call inspect_pages next to verify it.
+params: none
+
+name: inspect\_pages
+purpose: List current and all canvas pages with object counts, or inspect object IDs and types for one 1-based page number.
+params:
+
+- pageNumber (integer, optional): Optional 1-based page number whose object IDs and types should be returned.
+
 name: list\_tools
 purpose: List every registered draw-app tool with a one-line summary; call this first to choose tools.
 params: none

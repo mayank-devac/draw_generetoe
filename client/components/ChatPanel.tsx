@@ -8,18 +8,18 @@ import {
 	useState,
 	type CSSProperties,
 } from 'react'
-import { useValue } from 'tldraw'
+import { ErrorBoundary, useValue } from 'tldraw'
 import { convertTldrawShapeToSimpleShape } from '../../shared/format/convertTldrawShapeToSimpleShape'
 import { AgentTokenUsage } from '../../shared/types/Streaming'
 import { TldrawAgent } from '../agent/TldrawAgent'
 import { ChatHistory } from './chat-history/ChatHistory'
 import { ChatInput } from './ChatInput'
+import { ChatPanelFallback } from './ChatPanelFallback'
 import { ChevronRightIcon } from './icons/ChevronRightIcon'
 import { McpConnectionCard } from './McpConnectionCard'
 import { TodoList } from './TodoList'
 
 const CHAT_WIDTH_KEY = 'tldraw-agent-chat-width'
-const CHAT_COLLAPSED_KEY = 'tldraw-agent-chat-collapsed'
 const DEFAULT_CHAT_WIDTH = 350
 const MIN_CHAT_WIDTH = 280
 const MAX_CHAT_WIDTH = 900
@@ -57,16 +57,12 @@ function loadChatWidth() {
 	return clampChatWidth(raw)
 }
 
-function loadChatCollapsed() {
-	return readStored(CHAT_COLLAPSED_KEY) === '1'
-}
-
 export function ChatPanel({ agent }: { agent: TldrawAgent }) {
 	const { editor } = agent
 	const inputRef = useRef<HTMLTextAreaElement>(null)
 	const [width, setWidth] = useState(loadChatWidth)
 	const widthRef = useRef(width)
-	const [collapsed, setCollapsed] = useState(loadChatCollapsed)
+	const [collapsed, setCollapsed] = useState(true)
 	const collapsedRef = useRef(collapsed)
 	const [resizing, setResizing] = useState(false)
 	const modelName = useValue(agent.$modelName)
@@ -83,7 +79,6 @@ export function ChatPanel({ agent }: { agent: TldrawAgent }) {
 
 	useEffect(() => {
 		collapsedRef.current = collapsed
-		writeStored(CHAT_COLLAPSED_KEY, collapsed ? '1' : '0')
 	}, [collapsed])
 
 	useEffect(() => {
@@ -261,20 +256,22 @@ export function ChatPanel({ agent }: { agent: TldrawAgent }) {
 					</span>
 				</button>
 			</div>
-			<div className="chat-header">
-				<span
-					className="chat-token-counter"
-					title={getTokenUsageLabel(lastTokenUsage, false)}
-				>
-					{getTokenUsageLabel(lastTokenUsage, true)}
-				</span>
-				<McpConnectionCard agent={agent} />
-			</div>
-			<ChatHistory agent={agent} />
-			<div className="chat-input-container">
-				<TodoList agent={agent} />
-				<ChatInput agent={agent} handleSubmit={handleSubmit} inputRef={inputRef} />
-			</div>
+			<ErrorBoundary fallback={ChatPanelFallback}>
+				<div className="chat-header">
+					<span
+						className="chat-token-counter"
+						title={getTokenUsageLabel(lastTokenUsage, false)}
+					>
+						{getTokenUsageLabel(lastTokenUsage, true)}
+					</span>
+					<McpConnectionCard agent={agent} />
+				</div>
+				<ChatHistory agent={agent} />
+				<div className="chat-input-container">
+					<TodoList agent={agent} />
+					<ChatInput agent={agent} handleSubmit={handleSubmit} inputRef={inputRef} />
+				</div>
+			</ErrorBoundary>
 		</div>
 	)
 }

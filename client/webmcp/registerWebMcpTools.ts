@@ -5,6 +5,9 @@ import { AgentActionUtil } from '../../shared/actions/AgentActionUtil'
 import { AgentAction } from '../../shared/types/AgentAction'
 import { Streaming } from '../../shared/types/Streaming'
 import { TldrawAgent } from '../agent/TldrawAgent'
+import { searchCommonsImages } from '../commons/commonsImages'
+import { insertCommonsImage } from '../commons/insertCommonsImage'
+import { createCanvasPage, inspectCanvasPages } from './pageTools'
 
 type JsonSchema = {
 	[key: string]: unknown
@@ -54,10 +57,19 @@ const ACTION_TOOL_NAMES = [
 	'count',
 ] as const satisfies readonly AgentAction['_type'][]
 
+const COMMONS_TOOL_NAMES = ['search_commons_images', 'add_commons_image'] as const
+const PAGE_TOOL_NAMES = ['create_page', 'inspect_pages'] as const
 const DISCOVERY_TOOL_NAMES = ['list_tools', 'describe_tools'] as const
-const ALL_TOOL_NAMES = [...ACTION_TOOL_NAMES, ...DISCOVERY_TOOL_NAMES] as const
+const ALL_TOOL_NAMES = [
+	...ACTION_TOOL_NAMES,
+	...COMMONS_TOOL_NAMES,
+	...PAGE_TOOL_NAMES,
+	...DISCOVERY_TOOL_NAMES,
+] as const
 
 type ActionToolName = (typeof ACTION_TOOL_NAMES)[number]
+type CommonsToolName = (typeof COMMONS_TOOL_NAMES)[number]
+type PageToolName = (typeof PAGE_TOOL_NAMES)[number]
 type ToolName = (typeof ALL_TOOL_NAMES)[number]
 
 const ACTION_PURPOSES: Record<ActionToolName, string> = {
@@ -80,6 +92,20 @@ const ACTION_PURPOSES: Record<ActionToolName, string> = {
 	pen: 'Draw a visible freehand or straight-point path, optionally closed and filled.',
 	getInspiration: 'Fetch a random Wikipedia article and schedule it as inspiration for a follow-up turn.',
 	count: 'Count the current page shapes and schedule the answer for a follow-up turn.',
+}
+
+const COMMONS_PURPOSES: Record<CommonsToolName, string> = {
+	search_commons_images:
+		'Search Wikimedia Commons for up to six verified CC0 or public-domain images before choosing one to add.',
+	add_commons_image:
+		'Re-verify and add one Commons image at exact canvas coordinates with a grouped visible credit.',
+}
+
+const PAGE_PURPOSES: Record<PageToolName, string> = {
+	create_page:
+		'Create and switch to a new automatically named canvas page; call inspect_pages next to verify it.',
+	inspect_pages:
+		'List current and all canvas pages with object counts, or inspect object IDs and types for one 1-based page number.',
 }
 
 const PARAMETER_DESCRIPTIONS: Record<ActionToolName, Record<string, string>> = {
@@ -193,6 +219,71 @@ const HOST_INPUT_STUB: JsonSchema = Object.freeze({
 	properties: Object.freeze({}),
 })
 
+const SEARCH_COMMONS_IMAGES_INPUT_SCHEMA: JsonSchema = Object.freeze({
+	type: 'object',
+	additionalProperties: false,
+	required: Object.freeze(['query']),
+	properties: Object.freeze({
+		query: Object.freeze({
+			type: 'string',
+			minLength: 2,
+			maxLength: 80,
+			description: 'Short descriptive Commons file search query.',
+		}),
+	}),
+}) as JsonSchema
+
+const ADD_COMMONS_IMAGE_INPUT_SCHEMA: JsonSchema = Object.freeze({
+	type: 'object',
+	additionalProperties: false,
+	required: Object.freeze(['pageId', 'x', 'y']),
+	properties: Object.freeze({
+		pageId: Object.freeze({
+			type: 'integer',
+			minimum: 1,
+			description: 'Verified Commons pageId returned by search_commons_images.',
+		}),
+		x: Object.freeze({
+			type: 'number',
+			description: 'Exact canvas X coordinate for the image top-left.',
+		}),
+		y: Object.freeze({
+			type: 'number',
+			description: 'Exact canvas Y coordinate for the image top-left.',
+		}),
+		maxWidth: Object.freeze({
+			type: 'number',
+			minimum: 64,
+			maximum: 1600,
+			description: 'Optional maximum displayed image width. Default 640.',
+		}),
+		maxHeight: Object.freeze({
+			type: 'number',
+			minimum: 64,
+			maximum: 1200,
+			description: 'Optional maximum displayed image height. Default 480.',
+		}),
+	}),
+}) as JsonSchema
+
+const CREATE_PAGE_INPUT_SCHEMA: JsonSchema = Object.freeze({
+	type: 'object',
+	additionalProperties: false,
+	properties: Object.freeze({}),
+})
+
+const INSPECT_PAGES_INPUT_SCHEMA: JsonSchema = Object.freeze({
+	type: 'object',
+	additionalProperties: false,
+	properties: Object.freeze({
+		pageNumber: Object.freeze({
+			type: 'integer',
+			minimum: 1,
+			description: 'Optional 1-based page number whose object IDs and types should be returned.',
+		}),
+	}),
+})
+
 const LIST_TOOLS_INPUT_SCHEMA: JsonSchema = Object.freeze({
 	type: 'object',
 	additionalProperties: false,
@@ -223,12 +314,37 @@ const DescribeToolsInput = z.object({
 		.refine((names) => new Set(names).size === names.length, 'Tool names must be unique.'),
 })
 
+const SearchCommonsImagesInput = z
+	.object({
+		query: z.string().trim().min(2).max(80),
+	})
+	.strict()
+
+const AddCommonsImageInput = z
+	.object({
+		pageId: z.number().int().positive(),
+		x: z.number().finite(),
+		y: z.number().finite(),
+		maxWidth: z.number().finite().min(64).max(1600).optional(),
+		maxHeight: z.number().finite().min(64).max(1200).optional(),
+	})
+	.strict()
+
+const CreatePageInput = z.object({}).strict()
+
+const InspectPagesInput = z
+	.object({
+		pageNumber: z.number().int().positive().optional(),
+	})
+	.strict()
+
 type CatalogEntry = {
 	name: ToolName
 	purpose: string
 	inputSchema: JsonSchema
 	execute: WebMcpTool['execute']
 	readOnly: boolean
+	untrustedContent: boolean
 }
 
 export async function registerWebMcpTools(agent: TldrawAgent, signal: AbortSignal) {
@@ -252,9 +368,12 @@ export async function registerWebMcpTools(agent: TldrawAgent, signal: AbortSigna
 		const tool: WebMcpTool = {
 			name: entry.name,
 			description: entry.purpose,
-			inputSchema: isActionToolName(entry.name) ? HOST_INPUT_STUB : entry.inputSchema,
+			inputSchema: isDiscoveryToolName(entry.name) ? entry.inputSchema : HOST_INPUT_STUB,
 			execute: entry.execute,
-			annotations: entry.readOnly ? { readOnlyHint: true } : undefined,
+			annotations: {
+				readOnlyHint: entry.readOnly,
+				untrustedContentHint: entry.untrustedContent,
+			},
 		}
 
 		try {
@@ -288,8 +407,107 @@ function createCatalog(agent: TldrawAgent) {
 			inputSchema: createActionInputSchema(name, actionSchema),
 			execute: (input, context) => executeAction(agent, util, actionSchema, name, input, context),
 			readOnly: false,
+			untrustedContent: false,
 		})
 	}
+
+	catalog.set('search_commons_images', {
+		name: 'search_commons_images',
+		purpose: COMMONS_PURPOSES.search_commons_images,
+		inputSchema: SEARCH_COMMONS_IMAGES_INPUT_SCHEMA,
+		execute: async (input, context) => {
+			const parsed = SearchCommonsImagesInput.safeParse(input)
+			if (!parsed.success) return invalidArgumentsResult('search_commons_images', parsed.error)
+
+			try {
+				const images = await searchCommonsImages(parsed.data.query, context?.signal)
+				return {
+					ok: true,
+					tool: 'search_commons_images',
+					query: parsed.data.query,
+					count: images.length,
+					images,
+				}
+			} catch (error) {
+				return toolErrorResult('search_commons_images', error)
+			}
+		},
+		readOnly: true,
+		untrustedContent: true,
+	})
+
+	catalog.set('add_commons_image', {
+		name: 'add_commons_image',
+		purpose: COMMONS_PURPOSES.add_commons_image,
+		inputSchema: ADD_COMMONS_IMAGE_INPUT_SCHEMA,
+		execute: async (input, context) => {
+			const parsed = AddCommonsImageInput.safeParse(input)
+			if (!parsed.success) return invalidArgumentsResult('add_commons_image', parsed.error)
+
+			try {
+				const result = await insertCommonsImage(agent.editor, parsed.data, context?.signal)
+				return { ok: true, tool: 'add_commons_image', ...result }
+			} catch (error) {
+				return toolErrorResult('add_commons_image', error)
+			}
+		},
+		readOnly: false,
+		untrustedContent: true,
+	})
+
+	catalog.set('create_page', {
+		name: 'create_page',
+		purpose: PAGE_PURPOSES.create_page,
+		inputSchema: CREATE_PAGE_INPUT_SCHEMA,
+		execute: (input, context) => {
+			if (context?.signal?.aborted) {
+				return { ok: false, tool: 'create_page', error: 'Tool call was aborted.' }
+			}
+
+			const parsed = CreatePageInput.safeParse(input ?? {})
+			if (!parsed.success) return invalidArgumentsResult('create_page', parsed.error)
+
+			try {
+				return { ok: true, tool: 'create_page', ...createCanvasPage(agent.editor) }
+			} catch (error) {
+				return toolErrorResult('create_page', error)
+			}
+		},
+		readOnly: false,
+		untrustedContent: false,
+	})
+
+	catalog.set('inspect_pages', {
+		name: 'inspect_pages',
+		purpose: PAGE_PURPOSES.inspect_pages,
+		inputSchema: INSPECT_PAGES_INPUT_SCHEMA,
+		execute: (input, context) => {
+			if (context?.signal?.aborted) {
+				return { ok: false, tool: 'inspect_pages', error: 'Tool call was aborted.' }
+			}
+
+			const parsed = InspectPagesInput.safeParse(input ?? {})
+			if (!parsed.success) return invalidArgumentsResult('inspect_pages', parsed.error)
+
+			const totalPages = agent.editor.getPages().length
+			if (parsed.data.pageNumber !== undefined && parsed.data.pageNumber > totalPages) {
+				return {
+					ok: false,
+					tool: 'inspect_pages',
+					error: `Page number ${parsed.data.pageNumber} does not exist.`,
+					totalPages,
+				}
+			}
+
+			return {
+				ok: true,
+				tool: 'inspect_pages',
+				...inspectCanvasPages(agent.editor, parsed.data.pageNumber),
+			}
+		},
+		readOnly: true,
+		untrustedContent: false,
+	})
 
 	catalog.set('list_tools', {
 		name: 'list_tools',
@@ -299,6 +517,7 @@ function createCatalog(agent: TldrawAgent) {
 			tools: [...catalog.values()].map(({ name, purpose }) => ({ name, purpose })),
 		}),
 		readOnly: true,
+		untrustedContent: false,
 	})
 
 	catalog.set('describe_tools', {
@@ -319,6 +538,7 @@ function createCatalog(agent: TldrawAgent) {
 			}
 		},
 		readOnly: true,
+		untrustedContent: false,
 	})
 
 	return catalog
@@ -403,6 +623,14 @@ function invalidArgumentsResult(name: ToolName, error: z.ZodError) {
 	}
 }
 
+function toolErrorResult(name: ToolName, error: unknown) {
+	return {
+		ok: false,
+		tool: name,
+		error: error instanceof Error ? error.message : String(error),
+	}
+}
+
 async function getExistingToolNames(modelContext: WebMcpModelContext) {
 	if (!modelContext.getTools) return new Set<string>()
 
@@ -415,8 +643,8 @@ async function getExistingToolNames(modelContext: WebMcpModelContext) {
 	}
 }
 
-function isActionToolName(name: ToolName): name is ActionToolName {
-	return (ACTION_TOOL_NAMES as readonly string[]).includes(name)
+function isDiscoveryToolName(name: ToolName) {
+	return (DISCOVERY_TOOL_NAMES as readonly string[]).includes(name)
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

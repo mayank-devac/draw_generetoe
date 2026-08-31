@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
 	DefaultSizeStyle,
-	ErrorBoundary,
+	DefaultStylePanel,
+	DefaultStylePanelContent,
 	TLComponents,
 	Tldraw,
 	TldrawUiToastsProvider,
@@ -11,7 +12,7 @@ import {
 import { TldrawAgent } from './agent/TldrawAgent'
 import { useTldrawAgent } from './agent/useTldrawAgent'
 import { ChatPanel } from './components/ChatPanel'
-import { ChatPanelFallback } from './components/ChatPanelFallback'
+import { ChevronRightIcon } from './components/icons/ChevronRightIcon'
 import { CustomHelperButtons } from './components/CustomHelperButtons'
 import { AgentViewportBoundsHighlight } from './components/highlights/AgentViewportBoundsHighlights'
 import { ContextHighlights } from './components/highlights/ContextHighlights'
@@ -66,6 +67,7 @@ function App() {
 	const components: TLComponents = useMemo(() => {
 		return {
 			HelperButtons: () => agent && <CustomHelperButtons agent={agent} />,
+			StylePanel: CollapsibleStylePanel,
 			InFrontOfTheCanvas: () => (
 				<>
 					{agent && <AgentViewportBoundsHighlight agent={agent} />}
@@ -89,11 +91,39 @@ function App() {
 						<AppInner setAgent={setAgent} />
 					</Tldraw>
 				</div>
-				<ErrorBoundary fallback={ChatPanelFallback}>
-					{agent && <ChatPanel agent={agent} />}
-				</ErrorBoundary>
+				{agent && <ChatPanel agent={agent} />}
 			</div>
 		</TldrawUiToastsProvider>
+	)
+}
+
+function CollapsibleStylePanel() {
+	const [collapsed, setCollapsed] = useState(true)
+	const label = collapsed ? 'Expand style panel' : 'Collapse style panel'
+	const toggleButton = (
+		<button
+			type="button"
+			className="style-panel-collapse-button"
+			title={label}
+			aria-label={label}
+			aria-expanded={!collapsed}
+			onClick={() => setCollapsed((value) => !value)}
+		>
+			<span className={`style-panel-collapse-icon${collapsed ? ' is-collapsed' : ''}`}>
+				<ChevronRightIcon />
+			</span>
+		</button>
+	)
+
+	if (collapsed) {
+		return <div className="tlui-style-panel__wrapper collapsible-style-panel is-collapsed">{toggleButton}</div>
+	}
+
+	return (
+		<DefaultStylePanel>
+			<div className="style-panel-collapse-row">{toggleButton}</div>
+			<DefaultStylePanelContent />
+		</DefaultStylePanel>
 	)
 }
 
