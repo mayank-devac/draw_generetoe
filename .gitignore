@@ -10,3 +10,4 @@ dist/
 .cursor
 .DS_Store
 *.mov
+docs/frames/
