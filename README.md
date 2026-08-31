@@ -12,6 +12,8 @@ When the tldraw agent mounts, `App.tsx` calls `registerWebMcpTools` in `client/w
 
 ![WebMCP demo](docs/webmcp-demo.gif)
 
+![WebMCP drawing logos](docs/webmcp-demo2.gif)
+
 This is an early Chromium preview. You need Chromium `146.0.7672.0` or newer, plus the testing flag:
 
 1. Open `chrome://flags/#enable-webmcp-testing` (or `edge://flags/#enable-webmcp-testing`).
