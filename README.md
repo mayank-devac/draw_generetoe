@@ -2,7 +2,29 @@
 
 An AI drawing agent on a [tldraw](https://github.com/tldraw/tldraw) canvas. Chat on the right; the model creates shapes, HTML previews, and diagrams on the left.
 
-This repo is based on the [tldraw agent starter](https://github.com/tldraw/agent-template). The chat agent runs through a Cloudflare Worker. An optional local MCP bridge lets Cursor / Codex / Claude control the same canvas.
+This repo is based on the [tldraw agent starter](https://github.com/tldraw/agent-template). The chat agent runs through a Cloudflare Worker. The open canvas tab also registers [WebMCP](https://webmachinelearning.github.io/webmcp/) tools for a Chromium in-page agent. An optional local MCP bridge on port 3001 lets Cursor / Codex / Claude control the same canvas over HTTP.
+
+## WebMCP
+
+WebMCP is the in-page tool API. The browser tab is the tool server. It is not the Node process in `server/index.ts`, and it does not use HTTP, SSE, or stdio.
+
+When the tldraw agent mounts, `App.tsx` calls `registerWebMcpTools` in `client/webmcp/registerWebMcpTools.ts`. That registers canvas actions on `document.modelContext`. A WebMCP agent visits the live tab, calls a tool, and the shape change happens in that same page.
+
+This is an early Chromium preview. You need Chromium `146.0.7672.0` or newer, plus the testing flag:
+
+1. Open `chrome://flags/#enable-webmcp-testing` (or `edge://flags/#enable-webmcp-testing`).
+2. Set it to Enabled and restart the browser.
+3. Run `npm run dev` and open [http://127.0.0.1:5173/](http://127.0.0.1:5173/).
+4. Point a WebMCP agent at that tab.
+
+If the flag is off, `registerWebMcpTools` does nothing and the chat panel still works.
+
+Action tools register with a stub schema. Call discovery first:
+
+- `list_tools`. Every registered draw-app tool with a one-line purpose.
+- `describe_tools`. Full argument schemas for 1 to 10 unique names, then call those tools.
+
+Examples after that: `create`, `createHtmlPreview`, `update`, `delete`, `pen`. Layout helpers include `move`, `place`, `align`, and `stack`. Names and params for the full set live in `tools.txt`.
 
 ## Quick start
 
@@ -113,6 +135,8 @@ Key files:
 | `shared/parts/SystemPromptPartUtil.ts` | Edit the system prompt |
 | `worker/do/AgentService.ts` | Change how providers are called |
 | `client/agent/TldrawAgent.ts` | Change client prompt/stream/apply loop |
+| `client/webmcp/registerWebMcpTools.ts` | Change which canvas tools a WebMCP agent can call |
+| `tools.txt` | Full WebMCP tool names and argument schemas |
 | `.dev.vars` | Local secrets (never commit) |
 
 ## Models
