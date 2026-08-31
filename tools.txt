@@ -123,7 +123,7 @@ params:
 - shapeIds (string[], required): Simple IDs of the existing shapes to distribute.
 
 name: stack
-purpose: Pack existing shapes horizontally or vertically using a requested gap.
+purpose: Pack existing shapes along the horizontal or vertical axis with a requested gap, without aligning them.
 params:
 
 - direction (string, required): Stacking axis: horizontal or vertical.
@@ -132,7 +132,7 @@ params:
 - shapeIds (string[], required): Simple IDs of the existing shapes to stack.
 
 name: clear
-purpose: Delete every shape on the current canvas page.
+purpose: Delete all shapes on the current page, leaving other pages unchanged.
 params: none
 
 name: pen
@@ -191,6 +191,19 @@ purpose: List current and all canvas pages with object counts, or inspect object
 params:
 
 - pageNumber (integer, optional): Optional 1-based page number whose object IDs and types should be returned.
+
+name: inspect\_embeds
+purpose: Return source URLs of tldraw embed shapes on a canvas page (YouTube, Figma, and other Insert-embed providers) so the agent can research the inserted content into canvas.
+params:
+
+- pageNumber (integer, optional): Optional 1-based page number. Defaults to the current page.
+- shapeId (string, optional): Optional simple ID of one embed shape on that page.
+
+name: zoom\_out
+purpose: Zoom the current page camera so more of the canvas is visible. With no arguments, fit all shapes in the viewport. With steps, zoom out that many navigation-panel increments.
+params:
+
+- steps (integer, optional): Optional number of navigation-panel zoom-out increments from 1 to 50. Omit to fit all shapes in the viewport.
 
 name: list\_tools
 purpose: List every registered draw-app tool with a one-line summary and the required new-drawing page workflow; call this first to choose tools.

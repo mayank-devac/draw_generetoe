@@ -4,10 +4,12 @@ import { getAgentActionUtilsRecord } from '../../shared/AgentUtils'
 import { AgentActionUtil } from '../../shared/actions/AgentActionUtil'
 import { AgentAction } from '../../shared/types/AgentAction'
 import { Streaming } from '../../shared/types/Streaming'
+import { zoomOutCanvas } from '../../shared/zoomOutCanvas'
 import { TldrawAgent } from '../agent/TldrawAgent'
 import { searchCommonsImages } from '../commons/commonsImages'
 import { insertCommonsImage } from '../commons/insertCommonsImage'
 import { previewMermaidDiagram } from '../mermaid/mermaidDiagram'
+import { inspectEmbeds } from './embedTools'
 import { createCanvasPage, inspectCanvasPages } from './pageTools'
 
 type JsonSchema = {
@@ -61,12 +63,16 @@ const ACTION_TOOL_NAMES = [
 const COMMONS_TOOL_NAMES = ['search_commons_images', 'add_commons_image'] as const
 const MERMAID_TOOL_NAMES = ['create_mermaid_diagram'] as const
 const PAGE_TOOL_NAMES = ['create_page', 'inspect_pages'] as const
+const EMBED_TOOL_NAMES = ['inspect_embeds'] as const
+const CAMERA_TOOL_NAMES = ['zoom_out'] as const
 const DISCOVERY_TOOL_NAMES = ['list_tools', 'describe_tools'] as const
 const ALL_TOOL_NAMES = [
 	...ACTION_TOOL_NAMES,
 	...COMMONS_TOOL_NAMES,
 	...MERMAID_TOOL_NAMES,
 	...PAGE_TOOL_NAMES,
+	...EMBED_TOOL_NAMES,
+	...CAMERA_TOOL_NAMES,
 	...DISCOVERY_TOOL_NAMES,
 ] as const
 
@@ -74,6 +80,8 @@ type ActionToolName = (typeof ACTION_TOOL_NAMES)[number]
 type CommonsToolName = (typeof COMMONS_TOOL_NAMES)[number]
 type MermaidToolName = (typeof MERMAID_TOOL_NAMES)[number]
 type PageToolName = (typeof PAGE_TOOL_NAMES)[number]
+type EmbedToolName = (typeof EMBED_TOOL_NAMES)[number]
+type CameraToolName = (typeof CAMERA_TOOL_NAMES)[number]
 type ToolName = (typeof ALL_TOOL_NAMES)[number]
 
 const ACTION_PURPOSES: Record<ActionToolName, string> = {
@@ -91,8 +99,8 @@ const ACTION_PURPOSES: Record<ActionToolName, string> = {
 	resize: 'Scale one or more existing shapes around a supplied canvas origin.',
 	align: 'Align existing shapes to one shared edge or center axis.',
 	distribute: 'Distribute existing shapes evenly on the horizontal or vertical axis.',
-	stack: 'Pack existing shapes horizontally or vertically using a requested gap.',
-	clear: 'Delete every shape on the current canvas page.',
+	stack: 'Pack existing shapes along the horizontal or vertical axis with a requested gap, without aligning them.',
+	clear: 'Delete all shapes on the current page, leaving other pages unchanged.',
 	pen: 'Draw a visible freehand or straight-point path, optionally closed and filled.',
 	getInspiration: 'Fetch a random Wikipedia article and schedule it as inspiration for a follow-up turn.',
 	count: 'Count the current page shapes and schedule the answer for a follow-up turn.',
@@ -116,6 +124,16 @@ const NEW_DRAW_PAGE_WORKFLOW =
 const PAGE_PURPOSES: Record<PageToolName, string> = {
 	create_page: `Create and switch to a new automatically named canvas page. ${NEW_DRAW_PAGE_WORKFLOW}`,
 	inspect_pages: `List current and all canvas pages with object counts, or inspect object IDs and types for one 1-based page number. ${NEW_DRAW_PAGE_WORKFLOW}`,
+}
+
+const EMBED_PURPOSES: Record<EmbedToolName, string> = {
+	inspect_embeds:
+		'Return source URLs of tldraw embed shapes on a canvas page (YouTube, Figma, and other Insert-embed providers) so the agent can research the inserted content into canvas.',
+}
+
+const CAMERA_PURPOSES: Record<CameraToolName, string> = {
+	zoom_out:
+		'Zoom the current page camera so more of the canvas is visible. With no arguments, fit all shapes in the viewport. With steps, zoom out that many navigation-panel increments.',
 }
 
 const PARAMETER_DESCRIPTIONS: Record<ActionToolName, Record<string, string>> = {
@@ -332,6 +350,38 @@ const INSPECT_PAGES_INPUT_SCHEMA: JsonSchema = Object.freeze({
 	}),
 })
 
+const INSPECT_EMBEDS_INPUT_SCHEMA: JsonSchema = Object.freeze({
+	type: 'object',
+	additionalProperties: false,
+	properties: Object.freeze({
+		pageNumber: Object.freeze({
+			type: 'integer',
+			minimum: 1,
+			description: 'Optional 1-based page number. Defaults to the current page.',
+		}),
+		shapeId: Object.freeze({
+			type: 'string',
+			minLength: 1,
+			maxLength: 128,
+			description: 'Optional simple ID of one embed shape on that page.',
+		}),
+	}),
+})
+
+const ZOOM_OUT_INPUT_SCHEMA: JsonSchema = Object.freeze({
+	type: 'object',
+	additionalProperties: false,
+	properties: Object.freeze({
+		steps: Object.freeze({
+			type: 'integer',
+			minimum: 1,
+			maximum: 50,
+			description:
+				'Optional number of navigation-panel zoom-out increments. Omit to fit all shapes in the viewport.',
+		}),
+	}),
+})
+
 const LIST_TOOLS_INPUT_SCHEMA: JsonSchema = Object.freeze({
 	type: 'object',
 	additionalProperties: false,
@@ -393,6 +443,19 @@ const CreatePageInput = z.object({}).strict()
 const InspectPagesInput = z
 	.object({
 		pageNumber: z.number().int().positive().optional(),
+	})
+	.strict()
+
+const InspectEmbedsInput = z
+	.object({
+		pageNumber: z.number().int().positive().optional(),
+		shapeId: z.string().trim().min(1).max(128).optional(),
+	})
+	.strict()
+
+const ZoomOutInput = z
+	.object({
+		steps: z.number().int().min(1).max(50).optional(),
 	})
 	.strict()
 
@@ -594,6 +657,46 @@ function createCatalog(agent: TldrawAgent) {
 			}
 		},
 		readOnly: true,
+		untrustedContent: false,
+	})
+
+	catalog.set('inspect_embeds', {
+		name: 'inspect_embeds',
+		purpose: EMBED_PURPOSES.inspect_embeds,
+		inputSchema: INSPECT_EMBEDS_INPUT_SCHEMA,
+		execute: (input, context) => {
+			if (context?.signal?.aborted) {
+				return { ok: false, tool: 'inspect_embeds', error: 'Tool call was aborted.' }
+			}
+			const parsed = InspectEmbedsInput.safeParse(input ?? {})
+			if (!parsed.success) return invalidArgumentsResult('inspect_embeds', parsed.error)
+			try {
+				return { ok: true, tool: 'inspect_embeds', ...inspectEmbeds(agent.editor, parsed.data) }
+			} catch (error) {
+				return toolErrorResult('inspect_embeds', error)
+			}
+		},
+		readOnly: true,
+		untrustedContent: true,
+	})
+
+	catalog.set('zoom_out', {
+		name: 'zoom_out',
+		purpose: CAMERA_PURPOSES.zoom_out,
+		inputSchema: ZOOM_OUT_INPUT_SCHEMA,
+		execute: (input, context) => {
+			if (context?.signal?.aborted) {
+				return { ok: false, tool: 'zoom_out', error: 'Tool call was aborted.' }
+			}
+			const parsed = ZoomOutInput.safeParse(input ?? {})
+			if (!parsed.success) return invalidArgumentsResult('zoom_out', parsed.error)
+			try {
+				return { ok: true, tool: 'zoom_out', ...zoomOutCanvas(agent.editor, parsed.data) }
+			} catch (error) {
+				return toolErrorResult('zoom_out', error)
+			}
+		},
+		readOnly: false,
 		untrustedContent: false,
 	})
 
