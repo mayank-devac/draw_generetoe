@@ -10,6 +10,10 @@ WebMCP is the in-page tool API. The browser tab is the tool server. It is not th
 
 When the tldraw agent mounts, `App.tsx` calls `registerWebMcpTools` in `client/webmcp/registerWebMcpTools.ts`. That registers canvas actions on `document.modelContext`. A WebMCP agent visits the live tab, calls a tool, and the shape change happens in that same page.
 
+<video src="docs/webmcp-demo.mp4" controls width="100%">
+  <a href="docs/webmcp-demo.mp4">WebMCP demo</a>
+</video>
+
 This is an early Chromium preview. You need Chromium `146.0.7672.0` or newer, plus the testing flag:
 
 1. Open `chrome://flags/#enable-webmcp-testing` (or `edge://flags/#enable-webmcp-testing`).

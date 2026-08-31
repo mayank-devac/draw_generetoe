@@ -9,3 +9,4 @@ dist/
 .tsbuild/
 .cursor
 .DS_Store
+*.mov
