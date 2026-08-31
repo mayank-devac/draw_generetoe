@@ -10,6 +10,7 @@ import { searchCommonsImages } from '../commons/commonsImages'
 import { insertCommonsImage } from '../commons/insertCommonsImage'
 import { previewMermaidDiagram } from '../mermaid/mermaidDiagram'
 import { inspectEmbeds } from './embedTools'
+import { arrangeGrid } from './gridTools'
 import { createCanvasPage, inspectCanvasPages } from './pageTools'
 
 type JsonSchema = {
@@ -65,6 +66,7 @@ const MERMAID_TOOL_NAMES = ['create_mermaid_diagram'] as const
 const PAGE_TOOL_NAMES = ['create_page', 'inspect_pages'] as const
 const EMBED_TOOL_NAMES = ['inspect_embeds'] as const
 const CAMERA_TOOL_NAMES = ['zoom_out'] as const
+const GRID_TOOL_NAMES = ['arrange_grid'] as const
 const DISCOVERY_TOOL_NAMES = ['list_tools', 'describe_tools'] as const
 const ALL_TOOL_NAMES = [
 	...ACTION_TOOL_NAMES,
@@ -73,6 +75,7 @@ const ALL_TOOL_NAMES = [
 	...PAGE_TOOL_NAMES,
 	...EMBED_TOOL_NAMES,
 	...CAMERA_TOOL_NAMES,
+	...GRID_TOOL_NAMES,
 	...DISCOVERY_TOOL_NAMES,
 ] as const
 
@@ -82,6 +85,7 @@ type MermaidToolName = (typeof MERMAID_TOOL_NAMES)[number]
 type PageToolName = (typeof PAGE_TOOL_NAMES)[number]
 type EmbedToolName = (typeof EMBED_TOOL_NAMES)[number]
 type CameraToolName = (typeof CAMERA_TOOL_NAMES)[number]
+type GridToolName = (typeof GRID_TOOL_NAMES)[number]
 type ToolName = (typeof ALL_TOOL_NAMES)[number]
 
 const ACTION_PURPOSES: Record<ActionToolName, string> = {
@@ -134,6 +138,11 @@ const EMBED_PURPOSES: Record<EmbedToolName, string> = {
 const CAMERA_PURPOSES: Record<CameraToolName, string> = {
 	zoom_out:
 		'Zoom the current page camera so more of the canvas is visible. With no arguments, fit all shapes in the viewport. With steps, zoom out that many navigation-panel increments.',
+}
+
+const GRID_PURPOSES: Record<GridToolName, string> = {
+	arrange_grid:
+		'Normalize rotation and size for selected top-level shapes, arrange them in a row-major grid, and optionally fit the camera. Automatically adapts to aspect locks and provider minimum sizes.',
 }
 
 const PARAMETER_DESCRIPTIONS: Record<ActionToolName, Record<string, string>> = {
@@ -382,6 +391,44 @@ const ZOOM_OUT_INPUT_SCHEMA: JsonSchema = Object.freeze({
 	}),
 })
 
+const ARRANGE_GRID_INPUT_SCHEMA: JsonSchema = Object.freeze({
+	type: 'object',
+	additionalProperties: false,
+	required: Object.freeze(['shapeIds']),
+	properties: Object.freeze({
+		shapeIds: Object.freeze({
+			type: 'array',
+			minItems: 2,
+			maxItems: 100,
+			uniqueItems: true,
+			description: 'Unique simple IDs of top-level resizable shapes on the current page.',
+			items: Object.freeze({ type: 'string', minLength: 1, maxLength: 128 }),
+		}),
+		columns: Object.freeze({
+			type: 'integer',
+			minimum: 1,
+			maximum: 20,
+			description: 'Optional column count. Default ceil(sqrt(shape count)).',
+		}),
+		gap: Object.freeze({
+			type: 'number',
+			minimum: 0,
+			maximum: 500,
+			description: 'Optional horizontal and vertical gap. Default 50.',
+		}),
+		targetWidth: Object.freeze({
+			type: 'number',
+			minimum: 64,
+			maximum: 2000,
+			description: 'Optional starting common width. Default 600; may grow for provider minimums.',
+		}),
+		fitCamera: Object.freeze({
+			type: 'boolean',
+			description: 'Whether to fit the arranged grid in the viewport. Default true.',
+		}),
+	}),
+}) as JsonSchema
+
 const LIST_TOOLS_INPUT_SCHEMA: JsonSchema = Object.freeze({
 	type: 'object',
 	additionalProperties: false,
@@ -456,6 +503,20 @@ const InspectEmbedsInput = z
 const ZoomOutInput = z
 	.object({
 		steps: z.number().int().min(1).max(50).optional(),
+	})
+	.strict()
+
+const ArrangeGridInput = z
+	.object({
+		shapeIds: z
+			.array(z.string().trim().min(1).max(128))
+			.min(2)
+			.max(100)
+			.refine((shapeIds) => new Set(shapeIds).size === shapeIds.length, 'Shape IDs must be unique.'),
+		columns: z.number().int().min(1).max(20).optional(),
+		gap: z.number().finite().min(0).max(500).optional(),
+		targetWidth: z.number().finite().min(64).max(2000).optional(),
+		fitCamera: z.boolean().optional(),
 	})
 	.strict()
 
@@ -694,6 +755,26 @@ function createCatalog(agent: TldrawAgent) {
 				return { ok: true, tool: 'zoom_out', ...zoomOutCanvas(agent.editor, parsed.data) }
 			} catch (error) {
 				return toolErrorResult('zoom_out', error)
+			}
+		},
+		readOnly: false,
+		untrustedContent: false,
+	})
+
+	catalog.set('arrange_grid', {
+		name: 'arrange_grid',
+		purpose: GRID_PURPOSES.arrange_grid,
+		inputSchema: ARRANGE_GRID_INPUT_SCHEMA,
+		execute: (input, context) => {
+			if (context?.signal?.aborted) {
+				return { ok: false, tool: 'arrange_grid', error: 'Tool call was aborted.' }
+			}
+			const parsed = ArrangeGridInput.safeParse(input)
+			if (!parsed.success) return invalidArgumentsResult('arrange_grid', parsed.error)
+			try {
+				return { ok: true, tool: 'arrange_grid', ...arrangeGrid(agent.editor, parsed.data) }
+			} catch (error) {
+				return toolErrorResult('arrange_grid', error)
 			}
 		},
 		readOnly: false,

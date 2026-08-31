@@ -205,6 +205,16 @@ params:
 
 - steps (integer, optional): Optional number of navigation-panel zoom-out increments from 1 to 50. Omit to fit all shapes in the viewport.
 
+name: arrange\_grid
+purpose: Normalize rotation and size for selected top-level shapes, arrange them in a row-major grid, and optionally fit the camera. Automatically adapts to aspect locks and provider minimum sizes.
+params:
+
+- shapeIds (string[], required): Unique simple IDs of top-level resizable shapes on the current page.
+- columns (integer, optional): Optional column count from 1 to 20. Default ceil(sqrt(shape count)).
+- gap (number, optional): Optional horizontal and vertical gap from 0 to 500. Default 50.
+- targetWidth (number, optional): Optional starting common width from 64 to 2000. Default 600; may grow for provider minimums.
+- fitCamera (boolean, optional): Whether to fit the arranged grid in the viewport. Default true.
+
 name: list\_tools
 purpose: List every registered draw-app tool with a one-line summary and the required new-drawing page workflow; call this first to choose tools.
 params: none
