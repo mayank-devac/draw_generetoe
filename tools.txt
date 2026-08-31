@@ -1,0 +1,167 @@
+name: review
+purpose: Review a canvas region and schedule a follow-up turn when more work may be needed.
+params:
+
+- intent (string, required): Why this region should be reviewed and what the follow-up should check.
+- x (number, required): Left coordinate of the canvas region to review.
+- y (number, required): Top coordinate of the canvas region to review.
+- w (number, required): Width of the canvas region to review.
+- h (number, required): Height of the canvas region to review.
+
+name: create
+purpose: Create one new canvas shape from the app's existing simple-shape format.
+params:
+
+- intent (string, required): Short reason for creating the shape.
+- shape (object, required): Complete simple-shape object to create on the canvas.
+
+name: createHtmlPreview
+purpose: Create a visible interactive HTML preview shape in the current canvas view.
+params:
+
+- intent (string, required): Short reason for creating the interactive preview.
+- shapeId (string, required): Simple ID requested for the new preview shape.
+- title (string, required): Short title displayed on the HTML preview shape.
+- html (string, required): Self-contained HTML with inline CSS and JavaScript.
+- w (number, optional): Requested preview width; the app constrains it to the viewport.
+- h (number, optional): Requested preview height; the app constrains it to the viewport.
+
+name: delete
+purpose: Delete one existing canvas shape by its simple shape ID.
+params:
+
+- intent (string, required): Short reason for deleting the shape.
+- shapeId (string, required): Simple ID of the existing shape to delete.
+
+name: update
+purpose: Update the properties of one existing canvas shape.
+params:
+
+- intent (string, required): Short reason for updating the shape.
+- update (object, required): Complete simple-shape object containing the existing shape ID and updated properties.
+
+name: label
+purpose: Replace the visible text on one existing canvas shape.
+params:
+
+- intent (string, required): Short reason for changing the label.
+- shapeId (string, required): Simple ID of the existing shape whose text should change.
+- text (string, required): Replacement text for the shape.
+
+name: move
+purpose: Move one existing shape so its page bounds begin at the requested coordinates.
+params:
+
+- intent (string, required): Short reason for moving the shape.
+- shapeId (string, required): Simple ID of the existing shape to move.
+- x (number, required): Target left coordinate for the shape bounds.
+- y (number, required): Target top coordinate for the shape bounds.
+
+name: place
+purpose: Place one shape on a chosen side of another shape with alignment and offsets.
+params:
+
+- align (string, required): How to align the moved shape along the reference shape: start, center, or end.
+- alignOffset (number, required): Offset along the alignment axis.
+- intent (string, required): Short reason for placing the shape.
+- referenceShapeId (string, required): Simple ID of the stationary reference shape.
+- side (string, required): Side of the reference shape: top, bottom, left, or right.
+- sideOffset (number, required): Distance between the moved shape and the reference shape.
+- shapeId (string, required): Simple ID of the existing shape to place.
+
+name: bringToFront
+purpose: Bring one or more existing shapes in front of the other canvas content.
+params:
+
+- intent (string, required): Short reason for changing the shapes' z-order.
+- shapeIds (string[], required): Simple IDs of the existing shapes to bring to the front.
+
+name: sendToBack
+purpose: Send one or more existing shapes behind the other canvas content.
+params:
+
+- intent (string, required): Short reason for changing the shapes' z-order.
+- shapeIds (string[], required): Simple IDs of the existing shapes to send to the back.
+
+name: rotate
+purpose: Rotate one or more existing shapes around a supplied canvas origin.
+params:
+
+- centerY (number, required): Existing required action field retained for compatibility.
+- degrees (number, required): Clockwise rotation in degrees.
+- intent (string, required): Short reason for rotating the shapes.
+- originX (number, required): Canvas X coordinate of the rotation origin.
+- originY (number, required): Canvas Y coordinate of the rotation origin.
+- shapeIds (string[], required): Simple IDs of the existing shapes to rotate.
+
+name: resize
+purpose: Scale one or more existing shapes around a supplied canvas origin.
+params:
+
+- intent (string, required): Short reason for resizing the shapes.
+- originX (number, required): Canvas X coordinate of the resize origin.
+- originY (number, required): Canvas Y coordinate of the resize origin.
+- scaleX (number, required): Horizontal scale multiplier.
+- scaleY (number, required): Vertical scale multiplier.
+- shapeIds (string[], required): Simple IDs of the existing shapes to resize.
+
+name: align
+purpose: Align existing shapes to one shared edge or center axis.
+params:
+
+- alignment (string, required): Shared edge or center axis: top, bottom, left, right, center-horizontal, or center-vertical.
+- gap (number, required): Existing required action field retained for compatibility.
+- intent (string, required): Short reason for aligning the shapes.
+- shapeIds (string[], required): Simple IDs of the existing shapes to align.
+
+name: distribute
+purpose: Distribute existing shapes evenly on the horizontal or vertical axis.
+params:
+
+- direction (string, required): Distribution axis: horizontal or vertical.
+- intent (string, required): Short reason for distributing the shapes.
+- shapeIds (string[], required): Simple IDs of the existing shapes to distribute.
+
+name: stack
+purpose: Pack existing shapes horizontally or vertically using a requested gap.
+params:
+
+- direction (string, required): Stacking axis: horizontal or vertical.
+- gap (number, required): Non-negative distance placed between stacked shapes.
+- intent (string, required): Short reason for stacking the shapes.
+- shapeIds (string[], required): Simple IDs of the existing shapes to stack.
+
+name: clear
+purpose: Delete every shape on the current canvas page.
+params: none
+
+name: pen
+purpose: Draw a visible freehand or straight-point path, optionally closed and filled.
+params:
+
+- color (string, required): Canvas color name for the path.
+- closed (boolean, required): Whether to close the path by joining its final point to its first point.
+- fill (string, required): Fill style: none, tint, background, solid, or pattern.
+- intent (string, required): Short reason for drawing the path.
+- points (object[], required): Ordered canvas points that form the path.
+- style (string, required): Path interpolation style: smooth or straight.
+
+name: getInspiration
+purpose: Fetch a random Wikipedia article and schedule it as inspiration for a follow-up turn.
+params: none
+
+name: count
+purpose: Count the current page shapes and schedule the answer for a follow-up turn.
+params:
+
+- expression (string, required): Natural-language description of what should be counted.
+
+name: list\_tools
+purpose: List every registered draw-app tool with a one-line summary; call this first to choose tools.
+params: none
+
+name: describe\_tools
+purpose: Return full argument schemas for 1–10 unique tools before calling those compactly registered tools.
+params:
+
+- names (string[], required): Unique registered tool names to describe, returned in this order.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "WebMCP Build Arena"
+  short_description: "Design safe agent tools for the voxel arena"
+  default_prompt: "Use $webmcp-build-arena to expose this Build Arena capability as a safe WebMCP site tool."

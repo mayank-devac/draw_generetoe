@@ -19,6 +19,7 @@ import { enableLinedFillStyle } from './enableLinedFillStyle'
 import { customShapeUtils } from './shapes/customShapeUtils'
 import { TargetAreaTool } from './tools/TargetAreaTool'
 import { TargetShapeTool } from './tools/TargetShapeTool'
+import { registerWebMcpTools } from './webmcp/registerWebMcpTools'
 
 /**
  * The ID used for this project's agent.
@@ -106,6 +107,15 @@ function AppInner({ setAgent }: { setAgent: (agent: TldrawAgent) => void }) {
 		;(window as any).editor = editor
 		;(window as any).agent = agent
 	}, [agent, editor, setAgent])
+
+	useEffect(() => {
+		if (!agent) return
+
+		const controller = new AbortController()
+		void registerWebMcpTools(agent, controller.signal)
+
+		return () => controller.abort()
+	}, [agent])
 
 	return null
 }
