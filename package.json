@@ -11,6 +11,7 @@
 		"start:mcp": "tsx server/index.ts",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
+		"test:webmcp-evals": "tsx evals/webmcp/validateFixtures.ts",
 		"preview": "vite preview"
 	},
 	"dependencies": {
