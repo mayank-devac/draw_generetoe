@@ -2,7 +2,7 @@
 
 An AI drawing agent on a [tldraw](https://github.com/tldraw/tldraw) canvas. Chat on the right; the model creates shapes, HTML previews, and diagrams on the left.
 
-This repo is based on the [tldraw agent starter](https://github.com/tldraw/agent-template). The chat agent runs through a Cloudflare Worker. The open canvas tab also registers [WebMCP](https://webmachinelearning.github.io/webmcp/) tools for a Chromium in-page agent. An optional local MCP bridge on port 3001 lets Cursor / Codex / Claude control the same canvas over HTTP.
+This project uses the tldraw agent starter. It supports an AI chat agent, WebMCP canvas tools, and an optional local connection for Cursor, Codex, or Claude. An optional local MCP bridge on port 3001 lets Cursor / Codex / Claude control the same canvas over HTTP.
 
 ## WebMCP
 
