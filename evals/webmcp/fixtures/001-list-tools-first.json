@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "What tools can you use on this canvas?"
+    }
+  ],
+  "applicationState": {
+    "tools": [
+      { "name": "list_tools", "description": "List every registered draw-app tool with a one-line summary." },
+      { "name": "describe_tools", "description": "Return full argument schemas for selected tools." }
+    ]
+  },
+  "expectedCall": [
+    {
+      "functionName": "list_tools",
+      "arguments": {}
+    }
+  ]
+}

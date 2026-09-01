@@ -27,11 +27,12 @@ params:
 - h (number, optional): Requested preview height; the app constrains it to the viewport.
 
 name: delete
-purpose: Delete one existing canvas shape by its simple shape ID.
+purpose: Delete one existing canvas shape by its simple shape ID. WebMCP requires confirm true after user approval.
 params:
 
 - intent (string, required): Short reason for deleting the shape.
 - shapeId (string, required): Simple ID of the existing shape to delete.
+- confirm (boolean, WebMCP only): Must be true after explicit user approval.
 
 name: update
 purpose: Update the properties of one existing canvas shape.
@@ -132,8 +133,10 @@ params:
 - shapeIds (string[], required): Simple IDs of the existing shapes to stack.
 
 name: clear
-purpose: Delete all shapes on the current page, leaving other pages unchanged.
-params: none
+purpose: Delete all shapes on the current page, leaving other pages unchanged. WebMCP requires confirm true after user approval.
+params:
+
+- confirm (boolean, WebMCP only): Must be true after explicit user approval.
 
 name: pen
 purpose: Draw a visible freehand or straight-point path, optionally closed and filled.

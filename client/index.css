@@ -235,25 +235,8 @@ body.is-chat-resizing iframe {
 }
 
 @media (max-width: 768px) {
-	.chat-panel,
-	.chat-panel.is-collapsed {
-		height: 50vh;
-		width: 100vw;
-		overflow: visible;
-		transition: none;
-	}
-
-	.chat-resize-handle {
+	.chat-panel {
 		display: none;
-	}
-
-	.chat-panel.is-collapsed .chat-header {
-		display: flex;
-	}
-
-	.chat-panel.is-collapsed .chat-history,
-	.chat-panel.is-collapsed .chat-input-container {
-		display: flex;
 	}
 }
 

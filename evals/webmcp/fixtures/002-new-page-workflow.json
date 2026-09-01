@@ -1,0 +1,27 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "Start a fresh drawing for a new logo concept."
+    }
+  ],
+  "applicationState": {
+    "tools": [
+      { "name": "inspect_pages", "description": "List canvas pages and object counts." },
+      { "name": "create_page", "description": "Create and switch to a new canvas page." },
+      { "name": "create", "description": "Create one new canvas shape." },
+      { "name": "list_tools", "description": "List registered tools." }
+    ],
+    "notes": "Simulate a non-empty current page: objectCount > 0 on page 1 before the agent acts."
+  },
+  "expectedCall": [
+    {
+      "functionName": "inspect_pages",
+      "arguments": {}
+    },
+    {
+      "functionName": "create_page",
+      "arguments": {}
+    }
+  ]
+}

@@ -28,7 +28,7 @@ Action tools register with a stub schema. Call discovery first:
 - `list_tools`. Every registered draw-app tool with a one-line purpose.
 - `describe_tools`. Full argument schemas for 1 to 10 unique names, then call those tools.
 
-Examples after that: `create`, `createHtmlPreview`, `update`, `delete`, `pen`. Layout helpers include `move`, `place`, `align`, and `stack`. Names and params for the full set live in `tools.txt`.
+Examples after that: `create`, `createHtmlPreview`, `update`, `delete`, `pen`. Layout helpers include `move`, `place`, `align`, and `stack`. Destructive WebMCP tools `delete` and `clear` require `confirm: true` after the user approves. Names and params for the full set live in `tools.txt`.
 
 ## Quick start
 

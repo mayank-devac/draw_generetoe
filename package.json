@@ -10,6 +10,7 @@
 		"dev:mcp": "tsx watch server/index.ts",
 		"start:mcp": "tsx server/index.ts",
 		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
 		"preview": "vite preview"
 	},
 	"dependencies": {
@@ -46,7 +47,9 @@
 		"@types/ws": "^8.18.1",
 		"@vitejs/plugin-react-swc": "^3.10.2",
 		"concurrently": "^10.0.4",
+		"happy-dom": "^20.0.10",
 		"tsx": "^4.23.12",
+		"vitest": "^3.2.4",
 		"typescript": "^5.8.3",
 		"vite": "^7.3.6"
 	}

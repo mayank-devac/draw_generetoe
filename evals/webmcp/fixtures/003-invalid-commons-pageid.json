@@ -1,0 +1,21 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "Add the Commons image with pageId 99999 at x 100 y 200."
+    }
+  ],
+  "deterministicExecute": {
+    "functionName": "add_commons_image",
+    "arguments": {
+      "pageId": 99999,
+      "x": 100,
+      "y": 200
+    },
+    "expectedResult": {
+      "ok": false,
+      "tool": "add_commons_image"
+    },
+    "notes": "Run via document.modelContext.executeTool in a live WebMCP tab. pageId must not exist in search results."
+  }
+}
