@@ -9,6 +9,7 @@
 		"dev:app": "vite --host 127.0.0.1 --port 5173 --strictPort",
 		"dev:judge": "vite --config vite.config.judge.ts --host 127.0.0.1 --port 5173 --strictPort",
 		"build:judge": "npm run typecheck && vite build --config vite.config.judge.ts",
+		"stage:judge:sites": "node scripts/stage-judge-sites.mjs",
 		"preview:judge": "vite preview --config vite.config.judge.ts",
 		"dev:mcp": "tsx watch server/index.ts",
 		"start:mcp": "tsx server/index.ts",

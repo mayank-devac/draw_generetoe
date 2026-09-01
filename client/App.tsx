@@ -98,6 +98,7 @@ function App() {
 				)}
 				<div className="tldraw-canvas">
 					<Tldraw
+						licenseKey={import.meta.env.VITE_TLDRAW_LICENSE_KEY}
 						persistenceKey={isJudgeMode ? 'tldraw-webmcp-judge' : 'tldraw-agent-demo'}
 						shapeUtils={customShapeUtils}
 						tools={tools}
