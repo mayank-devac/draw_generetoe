@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
 	DefaultSizeStyle,
 	DefaultStylePanel,
@@ -65,6 +65,8 @@ const overrides: TLUiOverrides = {
 
 function App() {
 	const [agent, setAgent] = useState<TldrawAgent | undefined>()
+	const [judgeBannerVisible, setJudgeBannerVisible] = useState(isJudgeMode)
+	const dismissJudgeBanner = useCallback(() => setJudgeBannerVisible(false), [])
 
 	useEffect(() => {
 		if (isJudgeMode) document.title = 'WebMCP Draw Canvas'
@@ -91,7 +93,9 @@ function App() {
 	return (
 		<TldrawUiToastsProvider>
 			<div className={`tldraw-agent-container${isJudgeMode ? ' is-judge-mode' : ''}`}>
-				{isJudgeMode && <JudgeBanner />}
+				{isJudgeMode && judgeBannerVisible && (
+					<JudgeBanner onDismiss={dismissJudgeBanner} />
+				)}
 				<div className="tldraw-canvas">
 					<Tldraw
 						persistenceKey={isJudgeMode ? 'tldraw-webmcp-judge' : 'tldraw-agent-demo'}
@@ -109,11 +113,31 @@ function App() {
 	)
 }
 
-function JudgeBanner() {
+function JudgeBanner({ onDismiss }: { onDismiss: () => void }) {
+	const [phase, setPhase] = useState<'visible' | 'dismissing'>('visible')
+
+	useEffect(() => {
+		const dismissTimer = window.setTimeout(() => setPhase('dismissing'), 3000)
+		return () => window.clearTimeout(dismissTimer)
+	}, [])
+
+	useEffect(() => {
+		if (phase !== 'dismissing') return
+		const fallbackTimer = window.setTimeout(onDismiss, 500)
+		return () => window.clearTimeout(fallbackTimer)
+	}, [phase, onDismiss])
+
 	return (
-		<aside className="judge-banner" aria-label="WebMCP judge instructions">
-			<strong>WebMCP demo.</strong> Enable{' '}
-			<code>chrome://flags/#enable-webmcp-testing</code>, relaunch Chromium, then go to codex to use web mcp tools
+		<aside
+			className={`judge-banner${phase === 'dismissing' ? ' is-dismissing' : ''}`}
+			aria-label="WebMCP judge instructions"
+			onAnimationEnd={(event) => {
+				if (event.target !== event.currentTarget) return
+				if (event.animationName === 'judge-banner-slide-up') onDismiss()
+			}}
+		>
+			<strong>WebMCP draw canvas.</strong> In Chrome 146+, enable{' '}
+			<code>chrome://flags/#enable-webmcp-testing</code> and relaunch (or use the Codex browser).
 		</aside>
 	)
 }

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import {
 	CenteredTopPanelContainer,
 	TLShapeId,
-	TldrawUiButton,
 	useEditor,
 	useValue,
 } from 'tldraw'
@@ -34,10 +33,10 @@ export function MermaidPanelToggle() {
 	const label = panelState.isOpen ? 'Close Mermaid preview' : 'Open Mermaid preview'
 
 	return (
-		<div className="tlui-style-panel__wrapper mermaid-toggle-wrap">
-			<TldrawUiButton
-				type="icon"
-				className="mermaid-toggle"
+		<div className="tlui-style-panel__wrapper collapsible-style-panel is-collapsed mermaid-toggle-wrap">
+			<button
+				type="button"
+				className="style-panel-collapse-button mermaid-toggle"
 				title={disabled ? 'No Mermaid preview or diagram on this page' : label}
 				aria-label={disabled ? 'No Mermaid preview or diagram on this page' : label}
 				disabled={disabled}
@@ -47,8 +46,10 @@ export function MermaidPanelToggle() {
 					else if (target) openMermaidEditor(target.id)
 				}}
 			>
-				<span aria-hidden="true" className="mermaid-toggle-icon">M</span>
-			</TldrawUiButton>
+				<span aria-hidden="true" className="mermaid-toggle-icon">
+					M
+				</span>
+			</button>
 		</div>
 	)
 }
@@ -139,33 +140,6 @@ export function MermaidEditorOverlay() {
 		if (panelState.isOpen && !shape && !pending) closeMermaidEditor()
 	}, [panelState.isOpen, pending, shape])
 
-	// #region agent log
-	useEffect(() => {
-		const w = window as Window & { __debugOpenMermaidPreview?: () => Promise<unknown> }
-		w.__debugOpenMermaidPreview = () =>
-			previewMermaidDiagram(editor, {
-				shapeId: 'debug-mermaid',
-				source: 'flowchart LR\n  Idea --> Review\n  Review -->|Keep| Canvas\n  Review -->|Edit| Idea',
-			})
-		const describeDrag = (phase: string, event: DragEvent, hypothesisId: string) => {
-			const target = event.target
-			const el = target instanceof HTMLElement ? target : null
-			const img = target instanceof HTMLImageElement ? target : null
-			const url = (event.dataTransfer?.getData('text/uri-list') || event.dataTransfer?.getData('text/plain') || img?.src || '').slice(0, 80)
-			fetch('http://127.0.0.1:7359/ingest/b7873e6d-6601-4395-87ad-d5018b4378d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'19e42e'},body:JSON.stringify({sessionId:'19e42e',hypothesisId,location:'MermaidEditor.tsx:document-drag',message:phase,data:{tag:el?.tagName,className:el?.className,srcPrefix:img?.src?.slice(0,48),types:event.dataTransfer?Array.from(event.dataTransfer.types):[],urlPrefix:url,defaultPrevented:event.defaultPrevented,panelOpen:mermaidEditorState.get().isOpen},timestamp:Date.now()})}).catch(()=>{})
-		}
-		const onDragStart = (event: DragEvent) => describeDrag('document dragstart', event, 'A')
-		const onDrop = (event: DragEvent) => describeDrag('document drop', event, 'D')
-		document.addEventListener('dragstart', onDragStart, true)
-		document.addEventListener('drop', onDrop, true)
-		return () => {
-			delete w.__debugOpenMermaidPreview
-			document.removeEventListener('dragstart', onDragStart, true)
-			document.removeEventListener('drop', onDrop, true)
-		}
-	}, [editor])
-	// #endregion
-
 	const canApply = Boolean(draft !== source && previewSvg && !error && !rendering)
 
 	if (!panelState.isOpen || (!shape && !pending)) return null
@@ -199,9 +173,6 @@ export function MermaidEditorOverlay() {
 		try {
 			addMermaidPreviewToCanvas(editor, pending)
 		} catch (nextError) {
-			// #region agent log
-			fetch('http://127.0.0.1:7359/ingest/b7873e6d-6601-4395-87ad-d5018b4378d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'19e42e'},body:JSON.stringify({sessionId:'19e42e',hypothesisId:'D',location:'MermaidEditor.tsx:addToCanvas',message:'addToCanvas catch',data:{message:nextError instanceof Error ? nextError.message : String(nextError)},timestamp:Date.now()})}).catch(()=>{})
-			// #endregion
 			setNotice(nextError instanceof Error ? nextError.message : 'Could not add the diagram to the canvas.')
 		}
 	}
@@ -209,10 +180,6 @@ export function MermaidEditorOverlay() {
 	function blockPreviewDrag(event: React.DragEvent) {
 		event.preventDefault()
 		event.stopPropagation()
-		// #region agent log
-		const img = event.target instanceof HTMLImageElement ? event.target : null
-		fetch('http://127.0.0.1:7359/ingest/b7873e6d-6601-4395-87ad-d5018b4378d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'19e42e'},body:JSON.stringify({sessionId:'19e42e',hypothesisId:'B',location:'MermaidEditor.tsx:blockPreviewDrag',message:'blockPreviewDrag fired',data:{tag:event.target instanceof HTMLElement ? event.target.tagName : typeof event.target,srcPrefix:img?.src?.slice(0,48),defaultPrevented:event.defaultPrevented},timestamp:Date.now()})}).catch(()=>{})
-		// #endregion
 		setNotice('Drag is not supported. Use Add to canvas.')
 	}
 

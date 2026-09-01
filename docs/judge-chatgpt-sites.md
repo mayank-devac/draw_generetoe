@@ -5,7 +5,7 @@ This repo supports a **judge-only** static build without removing chat, Worker, 
 ## Local preview
 
 ```bash
-npm run dev:judge 
+npm run dev:judge
 ```
 
 Open http://127.0.0.1:5173/ — canvas only, WebMCP tools register as usual, no chat panel.
@@ -16,6 +16,8 @@ Production artifact:
 npm run build:judge
 npm run preview:judge
 ```
+
+Open http://127.0.0.1:4173/ (preview prefers port **4173**; if busy, Vite picks the next free port — check the terminal URL). Stop stale preview servers with `lsof -nP -iTCP:4173 -sTCP:LISTEN`.
 
 Output directory: `dist-judge/` (static SPA, no Cloudflare Worker).
 

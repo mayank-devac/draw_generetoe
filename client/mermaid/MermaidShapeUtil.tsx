@@ -42,11 +42,6 @@ export class MermaidShapeUtil extends BaseBoxShapeUtil<MermaidShape> {
 						src={svgToDataUrl(shape.props.svg)}
 						alt={shape.props.title}
 						draggable={false}
-						onDragStart={(event) => {
-							// #region agent log
-							fetch('http://127.0.0.1:7359/ingest/b7873e6d-6601-4395-87ad-d5018b4378d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'19e42e'},body:JSON.stringify({sessionId:'19e42e',hypothesisId:'C',location:'MermaidShapeUtil.tsx:img',message:'canvas mermaid img dragstart',data:{srcPrefix:event.currentTarget.src.slice(0,48)},timestamp:Date.now()})}).catch(()=>{})
-							// #endregion
-						}}
 					/>
 				</div>
 			</HTMLContainer>
