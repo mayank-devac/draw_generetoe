@@ -13,3 +13,4 @@ dist-judge/
 *.mov
 docs/frames/
 plans
+.env*

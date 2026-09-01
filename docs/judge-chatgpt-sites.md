@@ -57,6 +57,34 @@ Output directory: `dist-judge/` (static SPA, no Cloudflare Worker).
 4. Agent flow: `list_tools` → `describe_tools({ names: [...] })` → e.g. `create`, `inspect_pages`
 5. Destructive tools need `confirm: true` after user approval (`delete`, `clear`)
 
+1.HTTPS is tldraw production. 
+GitHub main may still lack WebMCP. Sites from a local Codex folder is safer than “deploy origin.”
+You do not need POST /stream for judges. If Codex tries to keep the Cloudflare Durable Object chat worker, that is extra. For this contest, the canvas + page tools are enough.
+2. Open the right ChatGPT surface
+
+Desktop: ChatGPT → Work, or Codex. Web: Work.
+Type @Sites so it is a hosting job.
+Official loop for an existing app (Sites docs, help): check compatibility, save a version, review, then deploy. Every deploy URL is production.
+Paste something like this (do not paste the key):
+
+Deploy this existing draw_generetoe project with @Sites. Check compatibility first. Do not invent new WebMCP tools. Keep document.modelContext.registerTool on the top-level page. Do not use service workers. Humans must still get a working canvas if WebMCP is missing. I do not need POST /stream for the contest. Save a version for review. Do not deploy until I say so. After deploy I will add the tldraw license key as a secret named VITE_TLDRAW_LICENSE_KEY.
+
+3. Review, then deploy
+
+Read the preview. Watch for Codex rewriting your tools or dropping tldraw.
+Save a version first. Deploy only when that version looks right.
+Share → Anyone on the internet (needed for judges) → Publish. Copy the URL.
+Owner-only: secrets. Add VITE_TLDRAW_LICENSE_KEY. Redeploy if the first load was unlicensed.
+If tldraw complains about the domain, get that Sites host added to the key.
+4. Prove WebMCP for judges
+
+Open the live URL in ChatGPT desktop’s built-in browser (not only normal Chrome).
+Use GPT-5.6 Sol or Terra. Luna has WebMCP off. Not Enterprise/Edu.
+Address bar → Site tools → Available site tools. You should see canvas tools (create, pen, list_tools, inspect_pages, and the rest you registered).
+Ask Work or Codex: draw a login page on this canvas / list tools. You should see the board change.
+Chrome backup: chrome://flags/#enable-webmcp-testing → Enabled → Relaunch. ChatGPT in-app is what the contest prefers.
+Tools live on the top-level page. Iframe tools will not show. Closing the tab kills the tools.
+
 ## Devpost submission
 
 Include on the form:
