@@ -6,6 +6,7 @@ node_modules
 .wrangler/
 .env
 dist/
+dist-judge/
 .tsbuild/
 .cursor
 .DS_Store

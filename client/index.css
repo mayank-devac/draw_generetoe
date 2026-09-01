@@ -17,6 +17,28 @@ body {
 	grid-template-columns: 1fr auto;
 }
 
+.tldraw-agent-container.is-judge-mode {
+	grid-template-columns: 1fr;
+	grid-template-rows: auto 1fr;
+}
+
+.judge-banner {
+	grid-column: 1 / -1;
+	padding: 10px 14px;
+	font-size: 13px;
+	line-height: 1.45;
+	color: #1a1a1a;
+	background: #f3f0ff;
+	border-bottom: 1px solid #d8d0f0;
+}
+
+.judge-banner code {
+	font-size: 12px;
+	background: rgb(0 0 0 / 6%);
+	padding: 1px 4px;
+	border-radius: 4px;
+}
+
 @media (max-width: 768px) {
 	.tldraw-agent-container {
 		grid-template-columns: 1fr;

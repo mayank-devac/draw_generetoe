@@ -22,6 +22,7 @@ import './mermaid/mermaid.css'
 import { customShapeUtils } from './shapes/customShapeUtils'
 import { TargetAreaTool } from './tools/TargetAreaTool'
 import { TargetShapeTool } from './tools/TargetShapeTool'
+import { isJudgeMode } from './judgeMode'
 import { registerWebMcpTools } from './webmcp/registerWebMcpTools'
 
 /**
@@ -65,28 +66,35 @@ const overrides: TLUiOverrides = {
 function App() {
 	const [agent, setAgent] = useState<TldrawAgent | undefined>()
 
+	useEffect(() => {
+		if (isJudgeMode) document.title = 'WebMCP Draw Canvas'
+	}, [])
+
 	// Custom components to visualize what the agent is doing
 	const components: TLComponents = useMemo(() => {
 		return {
-			HelperButtons: () => agent && <CustomHelperButtons agent={agent} />,
+			HelperButtons: () =>
+				agent && !isJudgeMode ? <CustomHelperButtons agent={agent} /> : null,
 			SharePanel: MermaidPanelToggle,
 			StylePanel: CollapsibleStylePanel,
 			TopPanel: MermaidEditorOverlay,
-			InFrontOfTheCanvas: () => (
-				<>
-					{agent && <AgentViewportBoundsHighlight agent={agent} />}
-					{agent && <ContextHighlights agent={agent} />}
-				</>
-			),
+			InFrontOfTheCanvas: () =>
+				!isJudgeMode && agent ? (
+					<>
+						<AgentViewportBoundsHighlight agent={agent} />
+						<ContextHighlights agent={agent} />
+					</>
+				) : null,
 		}
 	}, [agent])
 
 	return (
 		<TldrawUiToastsProvider>
-			<div className="tldraw-agent-container">
+			<div className={`tldraw-agent-container${isJudgeMode ? ' is-judge-mode' : ''}`}>
+				{isJudgeMode && <JudgeBanner />}
 				<div className="tldraw-canvas">
 					<Tldraw
-						persistenceKey="tldraw-agent-demo"
+						persistenceKey={isJudgeMode ? 'tldraw-webmcp-judge' : 'tldraw-agent-demo'}
 						shapeUtils={customShapeUtils}
 						tools={tools}
 						overrides={overrides}
@@ -95,9 +103,18 @@ function App() {
 						<AppInner setAgent={setAgent} />
 					</Tldraw>
 				</div>
-				{agent && <ChatPanel agent={agent} />}
+				{agent && !isJudgeMode && <ChatPanel agent={agent} />}
 			</div>
 		</TldrawUiToastsProvider>
+	)
+}
+
+function JudgeBanner() {
+	return (
+		<aside className="judge-banner" aria-label="WebMCP judge instructions">
+			<strong>WebMCP demo.</strong> Enable{' '}
+			<code>chrome://flags/#enable-webmcp-testing</code>, relaunch Chromium, then go to codex to use web mcp tools
+		</aside>
 	)
 }
 
