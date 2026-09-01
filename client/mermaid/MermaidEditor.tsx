@@ -34,7 +34,7 @@ export function MermaidPanelToggle() {
 	const label = panelState.isOpen ? 'Close Mermaid preview' : 'Open Mermaid preview'
 
 	return (
-		<div className="mermaid-toggle-wrap">
+		<div className="tlui-style-panel__wrapper mermaid-toggle-wrap">
 			<TldrawUiButton
 				type="icon"
 				className="mermaid-toggle"
