@@ -6,6 +6,8 @@ This project uses the tldraw agent starter. It supports an AI chat agent, WebMCP
 
 ## WebMCP
 
+[client/webmcp](https://github.com/mayank-devac/draw_generetoe/tree/main/client/webmcp)
+
 WebMCP is the in-page tool API. The browser tab is the tool server. It is not the Node process in `server/index.ts`, and it does not use HTTP, SSE, or stdio.
 
 When the tldraw agent mounts, `App.tsx` calls `registerWebMcpTools` in `client/webmcp/registerWebMcpTools.ts`. That registers canvas actions on `document.modelContext`. A WebMCP agent visits the live tab, calls a tool, and the shape change happens in that same page.
