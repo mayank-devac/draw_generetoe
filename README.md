@@ -6,7 +6,7 @@ This project uses the tldraw agent starter. It supports an AI chat agent, WebMCP
 
 ## WebMCP
 
-[client/webmcp](https://github.com/mayank-devac/draw_generetoe/tree/main/client/webmcp)
+[Open the WebMCP implementation on GitHub](https://github.com/mayank-devac/draw_generetoe/tree/main/client/webmcp) · [full tool catalog](tools.txt) · [agent guide](docs/webmcp-agent-guide.md)
 
 WebMCP is the in-page tool API. The browser tab is the tool server. It is not the Node process in `server/index.ts`, and it does not use HTTP, SSE, or stdio.
 
@@ -31,6 +31,27 @@ Action tools register with a stub schema. Call discovery first:
 - `describe_tools`. Full argument schemas for 1 to 10 unique names, then call those tools.
 
 Examples after that: `create`, `createHtmlPreview`, `update`, `delete`, `pen`. Layout helpers include `move`, `place`, `align`, and `stack`. Destructive WebMCP tools `delete` and `clear` require `confirm: true` after the user approves. Names and params for the full set live in `tools.txt`.
+
+### What WebMCP can demonstrate
+
+- **Drawing:** `pen` draws freehand or straight-point paths, with optional closing and fill styles.
+- **Interactive concepts:** `createHtmlPreview` places a self-contained HTML, CSS, and JavaScript playground on the canvas.
+- **Embedded references:** `inspect_embeds` returns the source URLs for tldraw embeds, including YouTube and Figma, so an agent can inspect what is already on the page.
+- **Diagrams:** `create_mermaid_diagram` renders Mermaid source in a preview that the user can inspect or add to the canvas.
+- **Open image sources:** `search_commons_images` finds verified CC0 or public-domain Wikimedia Commons images, and `add_commons_image` adds one with visible credit.
+- **Canvas organization:** `inspect_pages`, `create_page`, `zoom_out`, and `arrange_grid` support page-aware workflows and readable layouts.
+
+### What's new since August 25, 2026
+
+The dates below are Git commit dates and provide a traceable record of the WebMCP work completed for this project:
+
+- **August 31:** Added the in-page WebMCP foundation, tool registration, and the initial full catalog in [`6642c59`](https://github.com/mayank-devac/draw_generetoe/commit/6642c59).
+- **August 31:** Added Wikimedia Commons search and insertion for non-copyright image sources, plus page-aware canvas tools in [`145f8fb`](https://github.com/mayank-devac/draw_generetoe/commit/145f8fb).
+- **August 31:** Added Mermaid JS preview and canvas rendering in [`6b9b5cb`](https://github.com/mayank-devac/draw_generetoe/commit/6b9b5cb).
+- **August 31:** Added embed inspection and zoom-out tools in [`e5a4738`](https://github.com/mayank-devac/draw_generetoe/commit/e5a4738), followed by grid arrangement in [`6cbea53`](https://github.com/mayank-devac/draw_generetoe/commit/6cbea53).
+- **September 1:** Refactored WebMCP registration into a validated catalog with discovery tools, typed schemas, page/embed operations, and targeted tests in [`9d56d76`](https://github.com/mayank-devac/draw_generetoe/commit/9d56d76).
+- **September 1:** Added fixture validation and WebMCP evaluation coverage in [`738802c`](https://github.com/mayank-devac/draw_generetoe/commit/738802c).
+- **September 1:** Prepared a client-only judge build for Sites and hardened the judge presentation flow in [`1959d83`](https://github.com/mayank-devac/draw_generetoe/commit/1959d83), [`1798a24`](https://github.com/mayank-devac/draw_generetoe/commit/1798a24), and [`8a6e298`](https://github.com/mayank-devac/draw_generetoe/commit/8a6e298).
 
 ## Quick start
 
@@ -207,10 +228,10 @@ The MCP server (`server/index.ts`) is **local-only**. It binds to `127.0.0.1:300
 
 ## License
 
-This project is part of the tldraw SDK. It is provided under the [tldraw SDK license](https://github.com/tldraw/tldraw/blob/main/LICENSE.md).
+The original source code in this repository is provided under the [MIT License](LICENSE). The app includes the tldraw SDK as a dependency, which remains subject to tldraw's [SDK license](https://github.com/tldraw/tldraw/blob/main/LICENSE.md) and [trademark guidelines](https://github.com/tldraw/tldraw/blob/main/TRADEMARKS.md).
 
-You can use the tldraw SDK in commercial or non-commercial projects so long as you preserve the "Made with tldraw" watermark on the canvas. To remove the watermark, you can purchase a [business license](https://tldraw.dev#pricing). Visit [tldraw.dev](https://tldraw.dev) to learn more.
+When using the tldraw SDK in this app, keep the "Made with tldraw" watermark; removing it requires a [business license](https://tldraw.dev#pricing).
 
 ## Trademarks
 
-Copyright (c) 2025-present tldraw Inc. The tldraw name and logo are trademarks of tldraw. Please see our [trademark guidelines](https://github.com/tldraw/tldraw/blob/main/TRADEMARKS.md) for info on acceptable usage.
+The tldraw name and logo are trademarks of tldraw Inc.; please follow the [trademark guidelines](https://github.com/tldraw/tldraw/blob/main/TRADEMARKS.md).
