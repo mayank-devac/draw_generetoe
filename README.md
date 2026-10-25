@@ -45,13 +45,13 @@ Examples after that: `create`, `createHtmlPreview`, `update`, `delete`, `pen`. L
 
 The dates below are Git commit dates and provide a traceable record of the WebMCP work completed for this project:
 
-- **August 31:** Added the in-page WebMCP foundation, tool registration, and the initial full catalog in [`6642c59`](https://github.com/mayank-devac/draw_generetoe/commit/6642c59).
-- **August 31:** Added Wikimedia Commons search and insertion for non-copyright image sources, plus page-aware canvas tools in [`145f8fb`](https://github.com/mayank-devac/draw_generetoe/commit/145f8fb).
-- **August 31:** Added Mermaid JS preview and canvas rendering in [`6b9b5cb`](https://github.com/mayank-devac/draw_generetoe/commit/6b9b5cb).
-- **August 31:** Added embed inspection and zoom-out tools in [`e5a4738`](https://github.com/mayank-devac/draw_generetoe/commit/e5a4738), followed by grid arrangement in [`6cbea53`](https://github.com/mayank-devac/draw_generetoe/commit/6cbea53).
-- **September 1:** Refactored WebMCP registration into a validated catalog with discovery tools, typed schemas, page/embed operations, and targeted tests in [`9d56d76`](https://github.com/mayank-devac/draw_generetoe/commit/9d56d76).
-- **September 1:** Added fixture validation and WebMCP evaluation coverage in [`738802c`](https://github.com/mayank-devac/draw_generetoe/commit/738802c).
-- **September 1:** Prepared a client-only judge build for Sites and hardened the judge presentation flow in [`1959d83`](https://github.com/mayank-devac/draw_generetoe/commit/1959d83), [`1798a24`](https://github.com/mayank-devac/draw_generetoe/commit/1798a24), and [`8a6e298`](https://github.com/mayank-devac/draw_generetoe/commit/8a6e298).
+-  Added the in-page WebMCP foundation, tool registration, and the initial full catalog in [`6642c59`](https://github.com/mayank-devac/draw_generetoe/commit/6642c59).
+-  Added Wikimedia Commons search and insertion for non-copyright image sources, plus page-aware canvas tools in [`145f8fb`](https://github.com/mayank-devac/draw_generetoe/commit/145f8fb).
+- Added Mermaid JS preview and canvas rendering in [`6b9b5cb`](https://github.com/mayank-devac/draw_generetoe/commit/6b9b5cb).
+- Added embed inspection and zoom-out tools in [`e5a4738`](https://github.com/mayank-devac/draw_generetoe/commit/e5a4738), followed by grid arrangement in [`6cbea53`](https://github.com/mayank-devac/draw_generetoe/commit/6cbea53).
+- Refactored WebMCP registration into a validated catalog with discovery tools, typed schemas, page/embed operations, and targeted tests in [`9d56d76`](https://github.com/mayank-devac/draw_generetoe/commit/9d56d76).
+-  Added fixture validation and WebMCP evaluation coverage in [`738802c`](https://github.com/mayank-devac/draw_generetoe/commit/738802c).
+-  Prepared a client-only judge build for Sites and hardened the judge presentation flow in [`1959d83`](https://github.com/mayank-devac/draw_generetoe/commit/1959d83), [`1798a24`](https://github.com/mayank-devac/draw_generetoe/commit/1798a24), and [`8a6e298`](https://github.com/mayank-devac/draw_generetoe/commit/8a6e298).
 
 ## Quick start
 
